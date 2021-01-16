@@ -1,38 +1,15 @@
 
 """A demo script showing how to DIARIZATION ON WAV USING UIS-RNN."""
 
+import argparse
 import numpy as np
 import uisrnn
 import librosa
 import sys
-sys.path.append('ghostvlad')
-sys.path.append('visualization')
-import toolkits
-import model as spkModel
 import os
-from viewer import PlotDiar
+from ghostvlad import toolkits
+from ghostvlad import model as spkModel
 
-# ===========================================
-#        Parse the argument
-# ===========================================
-import argparse
-parser = argparse.ArgumentParser()
-# set up training configuration.
-parser.add_argument('--gpu', default='', type=str)
-parser.add_argument('--resume', default=r'ghostvlad/pretrained/weights.h5', type=str)
-parser.add_argument('--data_path', default='4persons', type=str)
-# set up network configuration.
-parser.add_argument('--net', default='resnet34s', choices=['resnet34s', 'resnet34l'], type=str)
-parser.add_argument('--ghost_cluster', default=2, type=int)
-parser.add_argument('--vlad_cluster', default=8, type=int)
-parser.add_argument('--bottleneck_dim', default=512, type=int)
-parser.add_argument('--aggregation_mode', default='gvlad', choices=['avg', 'vlad', 'gvlad'], type=str)
-# set up learning rate, training loss and optimizer.
-parser.add_argument('--loss', default='softmax', choices=['softmax', 'amsoftmax'], type=str)
-parser.add_argument('--test_type', default='normal', choices=['normal', 'hard', 'extend'], type=str)
-
-global args
-args = parser.parse_args()
 
 
 SAVED_MODEL_NAME = 'pretrained/saved_model.uisrnn_benchmark'
@@ -131,7 +108,7 @@ def load_data(path, win_length=400, sr=16000, hop_length=160, n_fft=512, embeddi
 
     return utterances_spec, intervals
 
-def main(wav_path, embedding_per_second=1.0, overlap_rate=0.5):
+def process(embedding_per_second=1.0, overlap_rate=0.5, args=None):
 
     # gpu configuration
     toolkits.initialize_GPU(args)
@@ -157,7 +134,7 @@ def main(wav_path, embedding_per_second=1.0, overlap_rate=0.5):
     uisrnnModel = uisrnn.UISRNN(model_args)
     uisrnnModel.load(SAVED_MODEL_NAME)
 
-    specs, intervals = load_data(wav_path, embedding_per_second=embedding_per_second, overlap_rate=overlap_rate)
+    specs, intervals = load_data(args.wav_path, embedding_per_second=embedding_per_second, overlap_rate=overlap_rate)
     mapTable, keys = genMap(intervals)
 
     feats = []
@@ -199,10 +176,31 @@ def main(wav_path, embedding_per_second=1.0, overlap_rate=0.5):
             e = fmtTime(e)
             print(s+' ==> '+e)
 
-    p = PlotDiar(map=speakerSlice, wav=wav_path, gui=True, size=(25, 6))
-    p.draw()
-    p.plot.show()
+    # p = PlotDiar(map=speakerSlice, wav=args.wav_path, gui=False, size=(25, 6))
+    # p.draw()
+    # p.plot.show()
 
 if __name__ == '__main__':
-    main(r'wavs/rmdmy.wav', embedding_per_second=1.2, overlap_rate=0.4)
+    # ===========================================
+    #        Parse the argument
+    # ===========================================
+    parser = argparse.ArgumentParser()
+    # set up training configuration.
+    parser.add_argument('--gpu', default='', type=str)
+    parser.add_argument('--resume', default=r'ghostvlad/pretrained/weights.h5', type=str)
+    parser.add_argument('--data_path', default='4persons', type=str)
+    parser.add_argument('--wav_path', default=r'wavs/rmdmy.wav', type=str)
+    # set up network configuration.
+    parser.add_argument('--net', default='resnet34s', choices=['resnet34s', 'resnet34l'], type=str)
+    parser.add_argument('--ghost_cluster', default=2, type=int)
+    parser.add_argument('--vlad_cluster', default=8, type=int)
+    parser.add_argument('--bottleneck_dim', default=512, type=int)
+    parser.add_argument('--aggregation_mode', default='gvlad', choices=['avg', 'vlad', 'gvlad'], type=str)
+    # set up learning rate, training loss and optimizer.
+    parser.add_argument('--loss', default='softmax', choices=['softmax', 'amsoftmax'], type=str)
+    parser.add_argument('--test_type', default='normal', choices=['normal', 'hard', 'extend'], type=str)
+     
+    args = parser.parse_args()
+
+    process(embedding_per_second=1.2, overlap_rate=0.4, args=args)
 

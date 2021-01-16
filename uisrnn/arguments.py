@@ -185,6 +185,11 @@ def parse_arguments():
            'sequence, and run inference on this concatenated sequence. '
            'Then we return the inference results on the last duplicate as the '
            'final prediction for the test sequence.')
+  inference_parser.add_argument(
+      '--wav_path',
+      default="",
+      type=str,
+      help='.')
 
   # a super parser for sanity checks
   super_parser = argparse.ArgumentParser(
